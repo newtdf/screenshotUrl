@@ -1,36 +1,35 @@
-import chromium from '@sparticuz/chromium';
-import puppeteer from 'puppeteer-core';
-
-// Configure Chromium for serverless environments
-chromium.setHeadlessMode = true; // Enable headless mode
-chromium.setGraphicsMode = false; // Disable GPU/WebGL
-
+import chromium from '@sparticuz/chromium'
+import puppeteer from "puppeteer-core";
 export async function getBrowserInstance() {
-  const executablePath = await chromium.executablePath();
-
-  // Configuration for Puppeteer launch
-  const launchOptions = {
-    args: chromium.args,
-    defaultViewport: {
-      width: 1368,
-      height: 768,
-    },
-    headless: chromium.headless,
-    ignoreHTTPSErrors: true,
-  };
-
-  if (!executablePath) {
-    // Running locally, use the full `puppeteer` package
-    const puppeteerLocal = await import('puppeteer').then((m) => m.default);
-    return await puppeteerLocal.launch({
-      ...launchOptions,
-      ignoreDefaultArgs: ['--disable-extensions'],
+	const executablePath = await chromium.executablePath();
+	// Optional: If you'd like to use the legacy headless mode. "new" is the default.
+	chromium.setHeadlessMode = true;
+	// Optional: If you'd like to disable webgl, true is the default.
+	chromium.setGraphicsMode = false;
+	if (!executablePath) {
+		// running locally
+		const puppeteerLocal = await import('puppeteer').then((m) => {
+      return m.default;
     });
-  }
-
-  // Running in a serverless environment, use `puppeteer-core` with the Chromium executable
-  return await puppeteer.launch({
-    ...launchOptions,
-    executablePath,
-  });
+		return await puppeteerLocal.launch({
+			ignoreDefaultArgs: ['--disable-extensions'],
+			args: chromium.args,
+			headless: chromium.headless,
+			defaultViewport: {
+				width: 1368,
+				height: 768
+			},
+			ignoreHTTPSErrors: true
+		});
+	}
+	return await puppeteer.launch({
+		args: chromium.args,
+		defaultViewport: {
+			width: 1368,
+			height: 768
+		},
+		executablePath: executablePath,
+		headless: chromium.headless,
+		ignoreHTTPSErrors: true
+	});
 }
